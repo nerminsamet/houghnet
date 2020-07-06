@@ -6,7 +6,7 @@
 - The experiments are run with pytorch 1.1.0, CUDA 10.0, and CUDNN 7.5.
 - Testing times are measured on a machine with a single Tesla V100 GPU. 
 - The models can be downloaded directly from [Google drive](https://drive.google.com/drive/folders/1dEshWidNf54MRFgNanrrhkdpH_eywkFP?usp=sharing).
-- All models are trained on COCO *train2017* and evaluated on *val2017*. 
+- All models are trained on COCO `train2017` and evaluated on `val2017`. 
 - We show test time and AP with no augmentation / flip augmentation / multi scale (0.6, 0.8, 1, 1.2, 1.5, 1.8) augmentation. 
 - You could test on COCO *test-dev* adding `--trainval`. 
 - Testing time includes network forwarding time, decoding time, and nms time (for MS test).
