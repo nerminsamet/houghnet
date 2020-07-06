@@ -28,7 +28,7 @@ First, be sure that you have finished [installation](INSTALL.md).
 
 Download the models you want to evaluate from our [model zoo](MODEL_ZOO.md) and put them in `HoughNet_ROOT/models/`. 
 
-To evaluate object detection with *Resnet-101 w DCN* on COCO `val2017`
+To evaluate object detection with **Resnet-101 w DCN** on `val2017`
 run
 
 ~~~
