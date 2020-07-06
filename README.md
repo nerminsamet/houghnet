@@ -43,7 +43,6 @@ Please refer to [INSTALL.md](readme/INSTALL.md) for installation instructions.
 ## Evaluation and Training
 
 For evaluation and training details please refer to [GETTING_STARTED.md](readme/GETTING_STARTED.md).
-You could find test and train scripts for all the experiments in the [experiments](experiments).
 
 ## Acknowledgement
 
