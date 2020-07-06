@@ -46,11 +46,7 @@ For evaluation and training details please refer to [GETTING_STARTED.md](readme/
 
 ## Acknowledgement
 
-This work was supported by the AWS Cloud Credits for Research program and by the Scientific and Technological Research Council of Turkey
-(TUBITAK) through the project titled "Object Detection in Videos with Deep Neural Networks" (grant number 117E054).
-The numerical calculations reported in this paper were partially performed at TUBITAK ULAKBIM,  High Performance and Grid Computing Center (TRUBA resources).
-
-We also thank the authors of [CenterNet](https://github.com/xingyizhou/CenterNet) for their clean code and inspiring work.
+This work was supported by the AWS Cloud Credits for Research program and by the Scientific and Technological Research Council of Turkey (TUBITAK) through the project titled "Object Detection in Videos with Deep Neural Networks" (grant number 117E054). The numerical calculations reported in this paper were partially performed at TUBITAK ULAKBIM,  High Performance and Grid Computing Center (TRUBA resources). We also thank the authors of [CenterNet](https://github.com/xingyizhou/CenterNet) for their clean code and inspiring work.
 
 <a href="https://aws.amazon.com/what-is-cloud-computing"><img src="https://d0.awsstatic.com/logos/powered-by-aws.png" alt="Powered by AWS Cloud Computing"></a>
 
