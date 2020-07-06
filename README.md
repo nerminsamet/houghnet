@@ -14,9 +14,7 @@ bottom-up object detection method. Inspired by the Generalized Hough Transform,
 HoughNet determines the presence of an object at a certain location by the sum of the
 votes cast on that location. Votes are collected from both near and long-distance locations
 based on a log-polar vote field. Thanks to this voting mechanism, HoughNet is able to integrate both near and long-range,
-class-conditional evidence for visual recognition, thereby generalizing and enhancing
- current object detection methodology, which typically relies on only local evidence.  
-On the COCO dataset, HoughNet achieves 46.4 AP (and 65.1 AP<sub>50</sub>), performing on par with the state-of-the-art in bottom-up object detection and outperforming most  major one-stage and two-stage methods. We further validate the effectiveness of our proposal in another task, namely, "labels to photo" image generation by integrating the voting module of HoughNet to two different GAN models and showing that the accuracy is significantly improved in both cases. Code will be made publicly available.
+class-conditional evidence for visual recognition, thereby generalizing and enhancing current object detection methodology, which typically relies on only local evidence. On the COCO dataset, HoughNet achieves 46.4 AP (and 65.1 AP<sub>50</sub>), performing on par with the state-of-the-art in bottom-up object detection and outperforming most  major one-stage and two-stage methods. We further validate the effectiveness of our proposal in another task, namely, "labels to photo" image generation by integrating the voting module of HoughNet to two different GAN models and showing that the accuracy is significantly improved in both cases. Code will be made publicly available.
 
 ## Features
 - Hough voting idea is applied through a log-polar vote field to utilize short and long-range evidence in a deep
@@ -25,9 +23,7 @@ learning model for generic object detection.
 - HoughNet is especially effective for small objects.
 - We provide step-by-step animation of the voting process ([slides](https://docs.google.com/presentation/d/1TI9gL3RC7URcNI7C72xxBiozbd2aNnYGTPAzU-BNbbo/edit?usp=sharing))
 - We provide Hough voting as a [module](src/lib/models/networks/hough_module.py) to be used in another works.
-- We provide COCO `minitrain` as a mini training set. It is useful for hyperparameter tuning and reducing the cost of
-ablation experiments. `minitrain` is strongly  positively correlated with the performance of the same model trained on `train2017`.
-For experiments, object instance statistics and download please refer to [COCO minitrain](https://github.com/giddyyupp/coco-minitrain)
+- We provide COCO `minitrain` as a mini training set. It is useful for hyperparameter tuning and reducing the cost of ablation experiments. `minitrain` is strongly  positively correlated with the performance of the same model trained on `train2017`. For experiments, object instance statistics and download please refer to [COCO minitrain](https://github.com/giddyyupp/coco-minitrain)
 
 
 ## Results on COCO val2017
