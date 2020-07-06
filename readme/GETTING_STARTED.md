@@ -13,7 +13,7 @@ First, be sure that you have finished [installation](INSTALL.md).
   ~~~
   ${COCO_PATH}
   |-- annotations
-      xxxxxxxx|-- instances_train2017.json
+      |-- instances_train2017.json
       |-- instances_minitrain2017.json
       |-- instances_val2017.json
       |-- image_info_test-dev2017.json
