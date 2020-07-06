@@ -56,9 +56,7 @@ We also thank the authors of [CenterNet](https://github.com/xingyizhou/CenterNet
 
 ## License
 
-HoughNet is released under the MIT License (refer to the [LICENSE](readme/LICENSE) file for details).
-We developed HoughNet on top of [CenterNet](https://github.com/xingyizhou/CenterNet).
-Please refer to the License of CenterNet for more.
+HoughNet is released under the MIT License (refer to the [LICENSE](readme/LICENSE) file for details). We developed HoughNet on top of [CenterNet](https://github.com/xingyizhou/CenterNet). Please refer to the License of CenterNet for more detail.
 
 ## Citation
 
