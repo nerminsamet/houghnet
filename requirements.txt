@@ -1,0 +1,8 @@
+opencv-python
+Cython
+numba
+progress
+matplotlib
+easydict
+scipy
+pycocotools
