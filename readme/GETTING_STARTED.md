@@ -28,17 +28,17 @@ First, be sure that you have finished [installation](INSTALL.md).
 
 Download the models you want to evaluate from our [model zoo](MODEL_ZOO.md) and put them in `HoughNet_ROOT/models/`. 
 
-To evaluate object detection with *Resnet-101 w DCN* on COCO *val2017*
+To evaluate object detection with *Resnet-101 w DCN* on COCO `val2017`
 run
 
 ~~~
 python src/test.py ctdet --houghnet --exp_id coco_resdcn_101_light --arch resdcn_101 --keep_res --resume  --load_model ./models/ctdet_coco_resdcn101_light.pth --coco_path $COCO_PATH
 ~~~
 
-This will give an AP of `35.7` on *val2017*. `--keep_res` is for keeping the original image resolution. 
+This will give an AP of `35.7` on `val2017`. `--keep_res` is for keeping the original image resolution. 
 Without `--keep_res` it will resize the images to `512 x 512`. 
 You can add `--flip_test` and `--flip_test --test_scales 0.6,0.8,1,1.2,1.5,1.8` to the above command, for flip test and multi-scale test, respectively. 
-The expected APs on *val2017* are `37.2` and `41.5`, respectively.
+The expected APs on `val2017` are `37.2` and `41.5`, respectively.
 
 For multi-scale test with *Hourglass* net, run
 
@@ -54,7 +54,7 @@ More results could be found in the model zoo.
 
 You could fing all the training scripts in the [experiments](../experiments) folder.
 In the case that you don't have 4 GPUs, you can follow the [linear learning rate rule](https://arxiv.org/abs/1706.02677).
-For instance, to train COCO object detection with *Resnet-101 w DCN* model using 4 Tesla V100 GPUs on *train2017*, run
+For instance, to train COCO object detection with *Resnet-101 w DCN* model using 4 Tesla V100 GPUs on `train2017`, run
 
 ~~~
 python src/main.py ctdet --houghnet --exp_id coco_resdcn_101 --arch resdcn_101 --batch_size 44 --master_batch 8 --lr 1.75e-4 --gpus 0,1,2,3 --num_workers 16 --coco_path $COCO_PATH 
