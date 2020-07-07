@@ -55,10 +55,11 @@ HoughNet is released under the MIT License (refer to the [LICENSE](readme/LICENS
 ## Citation
 
 If you find this project useful for your research, please use the following BibTeX entry.
-
+```
 @misc{samet2020houghnet,
     title={HoughNet: Integrating near and long-range evidence for bottom-up object detection},
     author={Nermin Samet and Samet Hicsonmez and Emre Akbas},
     year={2020},
     eprint={2007.02355},
 }
+```
