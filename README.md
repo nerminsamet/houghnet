@@ -29,7 +29,7 @@ voting module to two different GAN models and showing that the accuracy is signi
 - Hough voting idea is applied through a log-polar vote field to utilize short and long-range evidence in a deep
 learning model for generic object detection.
 - Our best single model achieves *46.4* AP on COCO test-dev.
-- HoughNet is effective for small objects (+2.5AP points over the baseline).
+- HoughNet is effective for small objects (+2.5 AP points over the baseline).
 - We provide Hough voting as a [module](src/lib/models/networks/hough_module.py) to be used in another works.
 - We provide COCO `minitrain` as a mini training set for COCO. It is useful for hyperparameter tuning and 
   reducing the cost of ablation experiments. `minitrain` is strongly  positively correlated with the performance of 
