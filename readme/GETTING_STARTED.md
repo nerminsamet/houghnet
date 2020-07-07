@@ -53,7 +53,7 @@ More results could be found in the model zoo.
 ## Training
 
 You could find all the training scripts in the [experiments](../experiments) folder.
-In the case that you don't have 4 GPUs, you can follow the [linear learning rate rule](https://arxiv.org/abs/1706.02677).
+In the case that you don't have 4 GPUs, you can follow the [linear learning rate rule](https://arxiv.org/abs/1706.02677) to adjust the learning rate.
 For instance, to train COCO object detection with *Resnet-101 w DCN* model using 4 Tesla V100 GPUs on `train2017`, run
 
 ~~~
