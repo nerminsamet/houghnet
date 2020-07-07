@@ -4,9 +4,9 @@ One-stage, anchor-free, voting-based, bottom-up object detector
 
 <img src="readme/teaser.png" width="550">
 
-> [**HoughNet: Integrating near and long-range evidence for bottom-up object detection**](http://arxiv.org/abs/1904.07850),            
+> [**HoughNet: Integrating near and long-range evidence for bottom-up object detection**](https://arxiv.org/abs/2007.02355),            
 > Nermin Samet, Samet Hicsonmez, Emre Akbas,        
-> *arXiv technical report ([arXiv 1904.07850](http://arxiv.org/abs/1904.07850))*         
+> *arXiv technical report ([arXiv 2007.02355](https://arxiv.org/abs/2007.02355))*         
 
 ## Abstract
 This paper presents HoughNet, a one-stage, anchor-free, voting-based,
@@ -56,9 +56,9 @@ HoughNet is released under the MIT License (refer to the [LICENSE](readme/LICENS
 
 If you find this project useful for your research, please use the following BibTeX entry.
 
-    @inproceedings{houghnet,
-      title={HoughNet: Integrating near and long-range evidence for bottom-up object detection},
-      author={Samet, Nermin and Hicsonmez, Samet and Akbas, Emre},
-      booktitle={arXiv preprint arXiv:1904.07850},
-      year={2020}
-    }
+@misc{samet2020houghnet,
+    title={HoughNet: Integrating near and long-range evidence for bottom-up object detection},
+    author={Nermin Samet and Samet Hicsonmez and Emre Akbas},
+    year={2020},
+    eprint={2007.02355},
+}
