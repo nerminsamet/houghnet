@@ -73,10 +73,10 @@ If you find HoughNet useful for your research, please cite our paper as follows.
 
 BibTeX entry: 
 ```
-@misc{samet2020houghnet,
-    title={HoughNet: Integrating near and long-range evidence for bottom-up object detection},
-    author={Nermin Samet and Samet Hicsonmez and Emre Akbas},
-    year={2020},
-    eprint={2007.02355},
+@inproceedings{HoughNet, 
+  authors = {Nermin Samet and Samet Hicsonmez and Emre Akbas},
+  title = {HoughNet: Integrating near and long-range evidence for bottom-up object detection}, 
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  year = {2020}, 
 }
 ```
