@@ -4,7 +4,7 @@ One-stage, anchor-free, voting-based, bottom-up object detector
 
 <img src="readme/teaser.png" width="550">
 
-> [**HoughNet: Integrating near and long-range evidence for bottom-up object detection**](https://arxiv.org/abs/2007.02355),            
+> [**HoughNet: Integrating near and long-range evidence for bottom-up object detection**](https://arxiv.org/abs/2007.02355) ,            
 > Nermin Samet, Samet Hicsonmez, Emre Akbas,        
 > *arXiv technical report ([arXiv 2007.02355](https://arxiv.org/abs/2007.02355))*         
 
