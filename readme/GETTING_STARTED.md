@@ -1,7 +1,7 @@
 # Getting Started
 
-You could find information about how to train and evaluate HoughNet on COCO. 
-First, be sure that you have finished [installation](INSTALL.md).
+This document provides information about how to train and evaluate HoughNet on COCO. 
+First, make sure that you have completed the [installation](INSTALL.md).
 
 ## Dataset preparation
 
@@ -52,7 +52,7 @@ More results could be found in the model zoo.
 
 ## Training
 
-You could fing all the training scripts in the [experiments](../experiments) folder.
+You could find all the training scripts in the [experiments](../experiments) folder.
 In the case that you don't have 4 GPUs, you can follow the [linear learning rate rule](https://arxiv.org/abs/1706.02677).
 For instance, to train COCO object detection with *Resnet-101 w DCN* model using 4 Tesla V100 GPUs on `train2017`, run
 
@@ -65,10 +65,10 @@ or on *minitrain*
 python src/main.py ctdet --houghnet --minicoco --exp_id coco_resdcn_101 --arch resdcn_101 --batch_size 44 --master_batch 8 --lr 1.75e-4 --gpus 0,1,2,3 --num_workers 16 --coco_path $COCO_PATH 
 ~~~
 
-If the training is terminated before finishing, you can use the same command with `--resume` to resume training. It will found the latest model with the same `exp_id`.
+If the training is terminated before finishing, you can use the same command with `--resume` to resume training. It will find the latest model with the same `exp_id`.
 
 Our best Hourglass model is finetuned from the pretrained [ExtremeNet model](https://drive.google.com/file/d/1TG3oBkHqj_QHdOHRF0RLsN4CxWxFTovA/view?usp=sharing) (from the [ExtremeNet repo](https://github.com/xingyizhou/ExtremeNet)).
-You need to download the model and load the model for training (see the [script](../experiments/ctdet_coco_hg104_extremenet.sh)).
+You need to download and load the model for training (see the [script](../experiments/ctdet_coco_hg104_extremenet.sh)).
 
 We also have another Hourglass model finetuned from the pretrained [CornerNet model](https://drive.google.com/file/d/14X4BdOKqbM1mINOK3V4tCWq5Jz3O0fEf/view?usp=sharing).
 You could download the model and load the model for training (see the [script](../experiments/ctdet_coco_hg104_cornernet.sh)).
