@@ -41,7 +41,7 @@ class Debugger(object):
         (255, 0, 0), (0, 0, 255), (255, 0, 0), (0, 0, 255),
         (255, 0, 0), (0, 0, 255), (255, 0, 0), (0, 0, 255),
         (255, 0, 0), (0, 0, 255)]
-    elif num_classes == 80 or dataset == 'coco':
+    elif num_classes == 80 or dataset == 'coco' or dataset == 'coco_seg':
       self.names = coco_class_name
     elif num_classes == 20 or dataset == 'pascal':
       self.names = pascal_class_name
@@ -198,6 +198,12 @@ class Debugger(object):
         cv2.line(self.imgs[img_id], (points[e[0], 0], points[e[0], 1]),
                       (points[e[1], 0], points[e[1], 1]), self.ec[j], 2,
                       lineType=cv2.LINE_AA)
+
+  def add_coco_seg(self, seg, img_id='default'):
+
+      seg = seg > 0.5
+      color = np.array([[np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)]])
+      self.imgs[img_id][seg] = self.imgs[img_id][seg]*0.2 + color*0.8
 
   def add_points(self, points, img_id='default'):
     num_classes = len(points)

@@ -5,6 +5,9 @@ from __future__ import print_function
 import torch
 import torch.nn as nn
 from .utils import _gather_feat, _tranpose_and_gather_feat
+from detectron2.structures import Boxes #  Each row is (x1, y1, x2, y2).
+from detectron2.layers import paste_masks_in_image
+from detectron2.utils.memory import retry_if_cuda_oom
 
 def _nms(heat, kernel=3):
     pad = (kernel - 1) // 2
@@ -569,3 +572,73 @@ def multi_pose_decode(
   detections = torch.cat([bboxes, scores, kps, clses], dim=2)
     
   return detections
+
+
+def ctseg_decode(heat, wh, shape_feat, saliency, seg_model, reg=None, cat_spec_wh=False, K=100):
+    batch, cat, height, width = heat.size()
+
+    # heat = torch.sigmoid(heat)
+    # perform nms on heatmaps
+    heat = _nms(heat)
+
+    scores, inds, clses, ys, xs = _topk(heat, K=K)
+
+    selected = scores > 0.05
+    if selected.sum() == 0:
+        selected[0, 0] = 1
+    scores = scores[selected].unsqueeze(dim=0)
+    inds = inds[selected].unsqueeze(dim=0)
+    clses = clses[selected].unsqueeze(dim=0)
+    ys = ys[selected].unsqueeze(dim=0)
+    xs = xs[selected].unsqueeze(dim=0)
+    K_ = scores.shape[1]
+
+    if reg is not None:
+        reg = _tranpose_and_gather_feat(reg, inds)
+        reg = reg.view(batch, K_, 2)
+        xs = xs.view(batch, K_, 1) + reg[:, :, 0:1]
+        ys = ys.view(batch, K_, 1) + reg[:, :, 1:2]
+    else:
+        xs = xs.view(batch, K_, 1) + 0.5
+        ys = ys.view(batch, K_, 1) + 0.5
+    wh = _tranpose_and_gather_feat(wh, inds)
+    if cat_spec_wh:
+        wh = wh.view(batch, K_, cat, 2)
+        clses_ind = clses.view(batch, K_, 1, 1).expand(batch, K_, 1, 2).long()
+        wh = wh.gather(2, clses_ind).view(batch, K_, 2)
+    else:
+        wh = wh.view(batch, K_, 2)
+    clses = clses.view(batch, K_, 1).float()
+    scores = scores.view(batch, K_, 1)
+    bboxes = torch.cat([xs - wh[..., 0:1] / 2,
+                        ys - wh[..., 1:2] / 2,
+                        xs + wh[..., 0:1] / 2,
+                        ys + wh[..., 1:2] / 2], dim=2)
+    detections = torch.cat([bboxes, scores, clses], dim=2)
+
+    h, w = shape_feat.size(-2), shape_feat.size(-1)
+    local_shapes = _tranpose_and_gather_feat(shape_feat, inds)
+    attns = torch.reshape(local_shapes, (1, -1, seg_model.attn_size, seg_model.attn_size))
+
+    saliency_list = []
+    boxes_list = []
+    saliency_list.append(saliency)
+    for i in range(1):
+        boxes_list.append(Boxes(bboxes[i, :, :] * 4.))
+
+    rois = seg_model.pooler(saliency_list, boxes_list)
+    pred_mask_logits = seg_model.merge_bases(rois, attns)
+
+    pred_mask_logits = pred_mask_logits.view(
+        -1, 1, seg_model.pooler_resolution, seg_model.pooler_resolution)
+
+    boxes_list[0].scale(0.25, 0.25)
+    pred_masks = retry_if_cuda_oom(paste_masks_in_image)(
+        pred_mask_logits[:, 0, :, :],  # N, 1, M, M
+        boxes_list[0],
+        (h, w),
+        threshold=0.5,
+    )
+
+    pred_masks = torch.unsqueeze(pred_masks, dim=0)
+    return detections, pred_masks

@@ -12,6 +12,9 @@ import torch
 import torch.nn as nn
 from .utils import _tranpose_and_gather_feat
 import torch.nn.functional as F
+from detectron2.structures import Boxes
+from detectron2.modeling.poolers import ROIPooler
+from detectron2.layers import ROIAlign, ROIAlignRotated, cat
 
 
 def _slow_neg_loss(pred, gt):
@@ -235,3 +238,106 @@ def compute_rot_loss(output, target_bin, target_res, mask):
           valid_output2[:, 7], torch.cos(valid_target_res2[:, 1]))
         loss_res += loss_sin2 + loss_cos2
     return loss_bin1 + loss_bin2 + loss_res
+
+class SegLoss(nn.Module):
+    def __init__(self,feat_channel):
+        super(SegLoss, self).__init__()
+        self.attn_size = 14
+        self.pooler_resolution = 56
+        self.num_gpus = 4
+        self.pooler = ROIPooler(
+            output_size=self.pooler_resolution,
+            scales=[0.25],
+            sampling_ratio=1,
+            pooler_type='ROIAlignV2',
+            canonical_level=2)
+
+    def forward(self, saliency, shape, gtboxes, reg_mask, ind, instance_mask,
+                center_target=None, cat_mask=None):
+
+        batch_size = saliency.size(0)
+        local_shapes = _tranpose_and_gather_feat(shape, ind)
+        attns = torch.reshape(local_shapes, (batch_size,-1, self.attn_size, self.attn_size ))
+        saliency_list = []
+        boxes_list = []
+        reg_mask_list = []
+        saliency_list.append(saliency)
+        for i in range(batch_size):
+            boxes_list.append(Boxes(gtboxes[i,:,:]*4.))
+            reg_mask_list.append(reg_mask[i])
+
+        center_target = _tranpose_and_gather_feat(center_target, ind)[cat_mask.to(dtype=bool)]
+
+        # num_obj = reg_mask.sum()
+        reg_mask = cat(reg_mask_list, dim=0)
+        rois = self.pooler(saliency_list, boxes_list)
+        pred_mask_logits = self.merge_bases(rois, attns)
+
+        gt_masks = []
+        for i, instances_per_image in enumerate(boxes_list):
+            if len(instances_per_image.tensor) == 0:
+                continue
+            instances_per_image.scale(0.25, 0.25)
+            gt_mask_per_image = self.crop_and_resize(instance_mask[i, :, :, :],
+                                                     instances_per_image.tensor, self.pooler_resolution
+                                                     ).to(device=pred_mask_logits.device)
+            gt_masks.append(gt_mask_per_image)
+
+        gt_masks = cat(gt_masks, dim=0)
+        N = gt_masks.size(0)
+        gt_masks = gt_masks.view(N, -1)
+
+        loss_denorm = max(center_target.sum()/ self.num_gpus, 1e-6)
+        # num_rois = pred_mask_logits.size(1)
+        # true_mask = torch.repeat_interleave(reg_mask.unsqueeze(dim=1),
+        #                                     repeats=num_rois, dim=1)
+        reg_mask = reg_mask.to(dtype=bool)
+        mask_losses = F.binary_cross_entropy(
+            pred_mask_logits[reg_mask], gt_masks.to(dtype=torch.float32)[reg_mask], reduction="none")
+
+        mask_loss = ((mask_losses.mean(dim=-1)*center_target).sum() / loss_denorm)
+
+        # mask_loss = mask_loss / num_obj
+        return mask_loss
+
+    def merge_bases(self, rois, coeffs, location_to_inds=None):
+        # merge predictions
+        # N = coeffs.size(0)
+        if location_to_inds is not None:
+            rois = rois[location_to_inds]
+        N, B, H, W = rois.size()
+
+        coeffs = coeffs.view(N, -1, self.attn_size, self.attn_size)
+        coeffs = F.interpolate(coeffs, (H, W),
+                               mode='bilinear').sigmoid() #.softmax(dim=1)
+        masks_preds = (rois.sigmoid() * coeffs ).sum(dim=1)
+        return masks_preds.view(N, -1)
+
+    def crop_and_resize(self, instance_mask, boxes, mask_size):
+        """
+        Crop each bitmask by the given box, and resize results to (mask_size, mask_size).
+        This can be used to prepare training targets for Mask R-CNN.
+        It has less reconstruction error compared to rasterization with polygons.
+        However we observe no difference in accuracy,
+        but BitMasks requires more memory to store all the masks.
+        Args:
+            boxes (Tensor): Nx4 tensor storing the boxes for each mask
+            mask_size (int): the size of the rasterized mask.
+        Returns:
+            Tensor:
+                A bool tensor of shape (N, mask_size, mask_size), where
+                N is the number of predicted boxes for this image.
+        """
+        assert len(boxes) == len(instance_mask), "{} != {}".format(len(boxes), len(instance_mask))
+        device = instance_mask.device
+        batch_inds = torch.arange(len(boxes), device=device).to(dtype=boxes.dtype)[:, None]
+        rois = torch.cat([batch_inds, boxes], dim=1)  # Nx5
+        bit_masks = instance_mask.to(dtype=torch.float32)
+        rois = rois.to(device=device)
+        output = (
+            ROIAlign((mask_size, mask_size), 1.0, 0, aligned=True)
+                .forward(bit_masks[:, None, :, :], rois)
+                .squeeze(1)
+        )
+        output = output >= 0.5
+        return output

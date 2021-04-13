@@ -5,7 +5,9 @@ from __future__ import print_function
 import numpy as np
 from .image import transform_preds
 from .ddd_utils import ddd2locrot
-
+from .image import transform_preds, get_affine_transform
+from pycocotools import mask as mask_utils
+import cv2
 
 def get_pred_depth(depth):
   return depth
@@ -96,6 +98,35 @@ def ctdet_post_process(dets, c, s, h, w, num_classes):
       top_preds[j + 1] = np.concatenate([
         dets[i, inds, :4].astype(np.float32),
         dets[i, inds, 4:5].astype(np.float32)], axis=1).tolist()
+    ret.append(top_preds)
+  return ret
+
+def ctseg_post_process(dets,masks,c, s, h, w,img_h,img_w, num_classes):
+  # dets: batch x max_dets x dim
+  # return 1-based class det dict
+  from concurrent.futures import ThreadPoolExecutor
+  worker = ThreadPoolExecutor(max_workers=8)
+  ret = []
+  for i in range(dets.shape[0]):
+    top_preds = {}
+    dets[i, :, :2] = transform_preds(
+          dets[i, :, 0:2], c[i], s[i], (w, h))
+    dets[i, :, 2:4] = transform_preds(
+          dets[i, :, 2:4], c[i], s[i], (w, h))
+    classes = dets[i, :, -1]
+
+    trans = get_affine_transform(c[i], s[i], 0, (w, h), inv=1)
+    masks = masks.astype(np.float)
+    for j in range(num_classes):
+      inds = (classes == j)
+
+      top_preds[j + 1] = {'boxs': np.concatenate([
+        dets[i, inds, :4].astype(np.float32),
+        dets[i, inds, 4:5].astype(np.float32)], axis=1),
+		  "pred_mask":list(worker.map(lambda x:mask_utils.encode(
+				  (np.asfortranarray(cv2.warpAffine(x, trans, (img_w, img_h),
+				   flags=cv2.INTER_CUBIC) > 0.5).astype(np.uint8))),masks[i, inds]))
+                          }
     ret.append(top_preds)
   return ret
 
