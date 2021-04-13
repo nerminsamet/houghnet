@@ -12,7 +12,7 @@ Official PyTroch implementation of HoughNet.
 - (April, 2021) We extended HoughNet with other visual detection tasks:
 instance segmentation, keypoint detection and 3D object detection.
 - (April, 2021)  We improved the source code of HoughNet by increasing its modularity and
-train & test speeds. We removed loops from vote aggregation step and implemented it as separable convolution operation. 
+train speed. 
 
 
 ## Summary
