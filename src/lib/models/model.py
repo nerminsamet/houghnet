@@ -11,25 +11,24 @@ from .networks.large_hourglass import get_large_hourglass_net
 from .networks.houghnet_resnet import get_houghnet_net
 from .networks.houghnet_dcn import get_houghnet_dcn_net
 from .networks.houghnet_large_hourglass import get_houghnet_large_hourglass_net
-
+from .networks.pose_dla_dcn_hough import get_pose_net as get_dlahough_dcn
+from .networks.pose_dla_dcn import get_pose_net as get_dla_dcn
 _model_factory = {
     'res': [get_pose_net, get_houghnet_net],
     'resdcn': [get_pose_net_dcn, get_houghnet_dcn_net],
-    'hourglass': [get_large_hourglass_net, get_houghnet_large_hourglass_net]
+    'hourglass': [get_large_hourglass_net, get_houghnet_large_hourglass_net],
+    'dla': [get_dla_dcn, get_dlahough_dcn]
 }
 
 
-def create_model(arch, heads, head_conv, hough=True, region_num=0, vote_field_size=0):
+def create_model(arch, heads, head_conv, region_num=0, vote_field_size=0, model_v1=False):
     num_layers = int(arch[arch.find('_') + 1:]) if '_' in arch else 0
+
     arch = arch[:arch.find('_')] if '_' in arch else arch
 
-    if hough:
-        get_model = _model_factory[arch][1]
-        model = get_model(num_layers=num_layers, heads=heads, head_conv=head_conv,
-                          region_num=region_num, vote_field_size=vote_field_size)
-    else:
-        get_model = _model_factory[arch][0]
-        model = get_model(num_layers=num_layers, heads=heads, head_conv=head_conv)
+    get_model = _model_factory[arch][1]
+    model = get_model(num_layers=num_layers, heads=heads, head_conv=head_conv,
+                      region_num=region_num, vote_field_size=vote_field_size, model_v1=model_v1)
 
     return model
 

@@ -9,12 +9,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
+import re
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
-from src.lib.utils.image import calculate_logmap
-import torch.nn.functional as F
+from src.lib.models.networks.hough_module import Hough
 
 BN_MOMENTUM = 0.1
 
@@ -117,14 +116,13 @@ def fill_fc_weights(layers):
 
 class HoughNetResNet(nn.Module):
 
-    def __init__(self, block, layers, heads, region_num, vote_field_size, head_conv, **kwargs):
+    def __init__(self, block, layers, heads, region_num, vote_field_size, model_v1, head_conv, **kwargs):
         self.inplanes = 64
         self.deconv_with_bias = False
         self.heads = heads
         self.region_num = region_num
         self.vote_field_size = vote_field_size
-        self.num_classes = int(heads['hm'] / region_num)
-        self.deconv_filter_padding = int(self.vote_field_size / 2)
+
 
         super(HoughNetResNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
@@ -145,6 +143,10 @@ class HoughNetResNet(nn.Module):
         )
         # self.final_layer = []
 
+        self.voting_heads = list(heads['voting_heads'])
+        del heads['voting_heads']
+        voting = False
+        self.heads = heads
         for head in sorted(self.heads):
           num_output = self.heads[head]
           if head_conv > 0:
@@ -154,6 +156,19 @@ class HoughNetResNet(nn.Module):
                 nn.ReLU(inplace=True),
                 nn.Conv2d(head_conv, num_output,
                   kernel_size=1, stride=1, padding=0))
+
+            for voting_head in self.voting_heads:
+                if re.fullmatch(head, voting_head):
+                    voting = True
+            if voting:
+                out_classes = int(num_output / self.region_num)
+                hough_voting = Hough(region_num=self.region_num,
+                                     vote_field_size=self.vote_field_size,
+                                     num_classes=out_classes,
+                                     model_v1=model_v1)
+                self.__setattr__('voting_' + head, hough_voting)
+                voting = False
+
           else:
             fc = nn.Conv2d(
               in_channels=64,
@@ -163,9 +178,6 @@ class HoughNetResNet(nn.Module):
               padding=0
           )
           self.__setattr__(head, fc)
-
-        self.deconv_filters = self._prepare_deconv_filters()
-
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -260,38 +272,6 @@ class HoughNetResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _prepare_deconv_filters(self):
-
-        vote_center = torch.tensor([64, 64]).cuda()
-        logmap = calculate_logmap((128, 128), vote_center)
-        logmap_onehot = torch.nn.functional.one_hot(logmap.long(), num_classes=int(logmap.max()+1)).float()
-        logmap_onehot = logmap_onehot[:, :, :self.region_num]
-        weights = logmap_onehot / \
-                        torch.clamp(torch.sum(torch.sum(logmap_onehot, dim=0), dim=0).float(), min=1.0)
-
-        start = 63 - int(self.vote_field_size/2)
-        stop  = 63 + int(self.vote_field_size/2) + 1
-
-        deconv_filters = weights[start:stop, start:stop,:].permute(2,0,1).view(self.region_num, 1,
-                                                                     self.vote_field_size, self.vote_field_size)
-        W = nn.Parameter(deconv_filters)
-        W.requires_grad = False
-
-        layers = []
-        deconv_kernel = nn.ConvTranspose2d(
-            in_channels=self.region_num,
-            out_channels=1,
-            kernel_size=self.vote_field_size,
-            padding=self.deconv_filter_padding,
-            bias=False)
-
-        with torch.no_grad():
-            deconv_kernel.weight = W
-
-        layers.append(deconv_kernel)
-
-        return nn.Sequential(*layers)
-
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
@@ -307,16 +287,9 @@ class HoughNetResNet(nn.Module):
         ret = {}
         for head in self.heads:
 
-            if head == 'hm':
-                voting_map = self.__getattr__(head)(x)
-                batch_size, channels, width, height = voting_map.shape
-                voting_map = voting_map.view(batch_size, self.region_num, self.num_classes, width, height)
-                heatmap = torch.zeros((batch_size, self.num_classes, width, height), dtype=torch.float).cuda()
-                for i in range(self.num_classes):
-                    heatmap[:, i, :, :] = self.deconv_filters(voting_map[:, :, i, :, :]).squeeze(dim=1)
-
-                ret[head] = heatmap
-
+            if head in self.voting_heads:
+                voting_map_hm = self.__getattr__(head)(x)
+                ret[head] = self.__getattr__('voting_' + head)(voting_map_hm)
             else:
                 ret[head] = self.__getattr__(head)(x)
 
@@ -370,9 +343,9 @@ resnet_spec = {18: (BasicBlock, [2, 2, 2, 2]),
                152: (Bottleneck, [3, 8, 36, 3])}
 
 
-def get_houghnet_net(num_layers, heads, head_conv, region_num, vote_field_size):
+def get_houghnet_net(num_layers, heads, head_conv, region_num, model_v1, vote_field_size):
   block_class, layers = resnet_spec[num_layers]
 
-  model = HoughNetResNet(block_class, layers, heads, region_num, vote_field_size, head_conv=head_conv)
+  model = HoughNetResNet(block_class, layers, heads, region_num, vote_field_size,  model_v1, head_conv=head_conv)
   model.init_weights(num_layers, pretrained=True)
   return model

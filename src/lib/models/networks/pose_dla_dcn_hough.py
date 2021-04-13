@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
+
 import math
 import logging
 import numpy as np
@@ -13,7 +13,7 @@ from torch import nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 from src.lib.models.networks.hough_module import Hough
-
+import re
 from .DCNv2.dcn_v2 import DCN
 
 BN_MOMENTUM = 0.1
@@ -427,12 +427,12 @@ class Interpolate(nn.Module):
 
 class DLASegHough(nn.Module):
     def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel,
-                 last_level, region_num, vote_field_size, head_conv, out_channel=0):
+                 last_level, region_num, vote_field_size, model_v1, head_conv, out_channel=0):
         super(DLASegHough, self).__init__()
         assert down_ratio in [2, 4, 8, 16]
         self.region_num = region_num
         self.vote_field_size = vote_field_size
-        self.num_classes = int(heads['hm_hp'] / region_num)
+        # self.num_classes = int(heads['hm_hp'] / region_num)
 
         self.first_level = int(np.log2(down_ratio))
         self.last_level = last_level
@@ -446,7 +446,10 @@ class DLASegHough(nn.Module):
 
         self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level], 
                             [2 ** i for i in range(self.last_level - self.first_level)])
-        
+
+        self.voting_heads = list(heads['voting_heads'])
+        del heads['voting_heads']
+        voting = False
         self.heads = heads
         for head in self.heads:
             classes = self.heads[head]
@@ -460,11 +463,23 @@ class DLASegHough(nn.Module):
                     padding=final_kernel // 2, bias=True))
               if 'hm' in head:
                 fc[-1].bias.data.fill_(-2.19)
-              if 'hm_hp' in head:
-                fc[-1].bias.data.fill_(0)
-                fc[-1].weight.data.fill_(0)
               else:
                 fill_fc_weights(fc)
+
+              for voting_head in self.voting_heads:
+                  if re.fullmatch(head, voting_head):
+                      voting = True
+              if voting:
+                  fc[-1].bias.data.fill_(0)
+                  fc[-1].weight.data.fill_(0)
+                  out_classes = int(classes / self.region_num)
+                  hough_voting = Hough(region_num=self.region_num,
+                                       vote_field_size=self.vote_field_size,
+                                       num_classes=out_classes,
+                                       model_v1=model_v1)
+                  self.__setattr__('voting_' + head, hough_voting)
+                  voting = False
+
             else:
               fc = nn.Conv2d(channels[self.first_level], classes, 
                   kernel_size=final_kernel, stride=1, 
@@ -474,10 +489,6 @@ class DLASegHough(nn.Module):
               else:
                 fill_fc_weights(fc)
             self.__setattr__(head, fc)
-
-        self.hough_voting = Hough(region_num=self.region_num,
-                                  vote_field_size=self.vote_field_size,
-                                  num_classes = self.num_classes)
 
     def forward(self, x):
         x = self.base(x)
@@ -490,15 +501,15 @@ class DLASegHough(nn.Module):
 
         z = {}
         for head in self.heads:
-            if head == 'hm_hp':
-                voting_map = self.__getattr__(head)(y[-1])
-                z[head] = self.hough_voting(voting_map)
+
+            if head in self.voting_heads:
+                voting_map_hm = self.__getattr__(head)(y[-1])
+                z[head] = self.__getattr__('voting_' + head)(voting_map_hm)
             else:
                 z[head] = self.__getattr__(head)(y[-1])
         return [z]
-    
 
-def get_pose_net(num_layers, heads,  region_num, vote_field_size, head_conv=256, down_ratio=4):
+def get_pose_net(num_layers, heads,  region_num, vote_field_size, head_conv=256, down_ratio=4, model_v1=False):
   model = DLASegHough('dla{}'.format(num_layers), heads,
                  pretrained=True,
                  down_ratio=down_ratio,
@@ -506,6 +517,7 @@ def get_pose_net(num_layers, heads,  region_num, vote_field_size, head_conv=256,
                  last_level=5,
                  region_num=region_num,
                  vote_field_size=vote_field_size,
+                 model_v1=model_v1,
                  head_conv=head_conv)
   return model
 

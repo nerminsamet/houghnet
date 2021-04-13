@@ -21,8 +21,7 @@ class BaseDetector(object):
       opt.device = torch.device('cpu')
     
     print('Creating model...')
-    self.model = create_model(opt.arch, opt.heads, opt.head_conv, opt.houghnet,
-                              opt.region_num, opt.vote_field_size)
+    self.model = create_model(opt.arch, opt.heads, opt.head_conv, opt.region_num, opt.vote_field_size, opt.model_v1)
     self.model = load_model(self.model, opt.load_model)
     self.model = self.model.to(opt.device)
     self.model.eval()
@@ -98,7 +97,7 @@ class BaseDetector(object):
     
     loaded_time = time.time()
     load_time += (loaded_time - start_time)
-    
+    img_h, img_w = image.shape[:2]
     detections = []
     for scale in self.scales:
       scale_start_time = time.time()
@@ -109,6 +108,7 @@ class BaseDetector(object):
         images = pre_processed_images['images'][scale][0]
         meta = pre_processed_images['meta'][scale]
         meta = {k: v.numpy()[0] for k, v in meta.items()}
+      meta['img_size'] = (img_h, img_w)
       images = images.to(self.opt.device)
       torch.cuda.synchronize()
       pre_process_time = time.time()

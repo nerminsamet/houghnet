@@ -19,11 +19,19 @@ class opts(object):
                              help='Default region num')
     self.parser.add_argument('--vote_field_size', type=int, default=17,
                              help='Default deconv size')
+    self.parser.add_argument('--model_v1',  action='store_true',
+                             help='use models from first release')
+
+    ## ctseg parameters
+    self.parser.add_argument('--seg_feat_channel', default=8, type=int,
+                             help='.')
+    self.parser.add_argument('--seg_weight', default= 1., type=float,
+                             help='')
 
     self.parser.add_argument('task', default='ctdet',
-                             help='ctdet')
+                             help='ctdet | ctseg')
     self.parser.add_argument('--dataset', default='coco',
-                             help='coco')
+                             help='coco | coco_seg | multi_pose | ddd')
     self.parser.add_argument('--exp_id', default='default')
     self.parser.add_argument('--test', action='store_true')
     self.parser.add_argument('--debug', type=int, default=0,
@@ -147,6 +155,13 @@ class opts(object):
     self.parser.add_argument('--no_color_aug', action='store_true',
                              help='not use the color augmenation '
                                   'from CornerNet')
+
+    # multi_pose
+    self.parser.add_argument('--aug_rot', type=float, default=0,
+                             help='probability of applying '
+                                  'rotation augmentation.')
+
+
     # loss
     self.parser.add_argument('--mse_loss', action='store_true',
                              help='use mse loss or focal loss to train '
@@ -160,6 +175,20 @@ class opts(object):
                              help='loss weight for keypoint local offsets.')
     self.parser.add_argument('--wh_weight', type=float, default=0.1,
                              help='loss weight for bounding box size.')
+
+    # multi_pose
+    self.parser.add_argument('--hp_weight', type=float, default=1,
+                             help='loss weight for human pose offset.')
+    self.parser.add_argument('--hm_hp_weight', type=float, default=1,
+                             help='loss weight for human keypoint heatmap.')
+    # ddd
+    self.parser.add_argument('--dep_weight', type=float, default=1,
+                             help='loss weight for depth.')
+    self.parser.add_argument('--dim_weight', type=float, default=1,
+                             help='loss weight for 3d bounding box size.')
+    self.parser.add_argument('--rot_weight', type=float, default=1,
+                             help='loss weight for orientation.')
+    self.parser.add_argument('--peak_thresh', type=float, default=0.2)
  
     # task
     # ctdet
@@ -172,7 +201,31 @@ class opts(object):
                              help='category specific bounding box size.')
     self.parser.add_argument('--not_reg_offset', action='store_true',
                              help='not regress local offset.')
-   
+
+    # multi_pose
+    self.parser.add_argument('--dense_hp', action='store_true',
+                             help='apply weighted pose regression near center '
+                                  'or just apply regression on center point.')
+    self.parser.add_argument('--not_hm_hp', action='store_true',
+                             help='not estimate human joint heatmap, '
+                                  'directly use the joint offset from center.')
+    self.parser.add_argument('--not_reg_hp_offset', action='store_true',
+                             help='not regress local offset for '
+                                  'human joint heatmaps.')
+    self.parser.add_argument('--not_reg_bbox', action='store_true',
+                             help='not regression bounding box size.')
+
+    # ddd
+    self.parser.add_argument('--aug_ddd', type=float, default=0.5,
+                             help='probability of applying crop augmentation.')
+    self.parser.add_argument('--rect_mask', action='store_true',
+                             help='for ignored object, apply mask on the '
+                                  'rectangular region or just center point.')
+    self.parser.add_argument('--kitti_split', default='3dop',
+                             help='different validation split for kitti: '
+                                  '3dop | subcnn')
+
+
     # ground truth validation
     self.parser.add_argument('--eval_oracle_hm', action='store_true',
                              help='use ground center heatmap.')
@@ -204,9 +257,9 @@ class opts(object):
     opt.fix_res = not opt.keep_res
     print('Fix size testing.' if opt.fix_res else 'Keep resolution testing.')
     opt.reg_offset = not opt.not_reg_offset
-    #opt.reg_bbox = not opt.not_reg_bbox
-    #opt.hm_hp = not opt.not_hm_hp
-    #opt.reg_hp_offset = (not opt.not_reg_hp_offset) and opt.hm_hp
+    opt.reg_bbox = not opt.not_reg_bbox
+    opt.hm_hp = not opt.not_hm_hp
+    opt.reg_hp_offset = (not opt.not_reg_hp_offset) and opt.hm_hp
 
     if opt.head_conv == -1: # init default head_conv
       opt.head_conv = 256 if 'dla' in opt.arch else 64
@@ -262,17 +315,60 @@ class opts(object):
     opt.input_res = max(opt.input_h, opt.input_w)
     opt.output_res = max(opt.output_h, opt.output_w)
 
-
     if opt.task == 'ctdet':
-      # assert opt.dataset in ['pascal', 'coco']
+
+      opt.heads = {'hm': opt.num_classes, 'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes}
+      opt.heads.update({'voting_heads': {}})
       if opt.houghnet == True:
-          opt.heads = {'hm': opt.num_classes*opt.region_num,
-                       'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes}
-      else:
-          opt.heads = {'hm': opt.num_classes,
-                       'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes}
+          opt.heads.update({'hm': opt.num_classes*opt.region_num})
+          opt.heads.update({'voting_heads': {'hm'}})
+
       if opt.reg_offset:
         opt.heads.update({'reg': 2})
+
+    elif opt.task == 'ctseg':
+
+      opt.heads = {'hm': opt.num_classes, 'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes,
+                 'shape': 14 ** 2,
+                 'saliency': 1
+                 }
+      opt.heads.update({'voting_heads': {}})
+      if opt.houghnet == True:
+          opt.heads.update({'hm': opt.num_classes*opt.region_num})
+          opt.heads.update({'voting_heads': {'hm'}})
+
+      if opt.reg_offset:
+        opt.heads.update({'reg': 2})
+
+    elif opt.task == 'multi_pose':
+      opt.flip_idx = dataset.flip_idx
+      opt.heads = {'hm': opt.num_classes, 'wh': 2, 'hps': 34}
+      if opt.reg_offset:
+        opt.heads.update({'reg': 2})
+      if opt.hm_hp:
+        opt.heads.update({'hm_hp': 17})
+      if opt.reg_hp_offset:
+        opt.heads.update({'hp_offset': 2})
+
+      opt.heads.update({'voting_heads': {}})
+      if opt.houghnet == True:
+          opt.heads.update({'hm': opt.num_classes*opt.region_num})
+          opt.heads.update({'hm_hp': 17 * opt.region_num})
+          opt.heads.update({'voting_heads': {'hm', 'hm_hp'}})
+
+    elif opt.task == 'ddd':
+      opt.heads = {'hm': opt.num_classes, 'dep': 1, 'rot': 8, 'dim': 3}
+      if opt.reg_bbox:
+        opt.heads.update(
+          {'wh': 2})
+      if opt.reg_offset:
+        opt.heads.update({'reg': 2})
+
+      opt.heads.update({'voting_heads': {}})
+      if opt.houghnet == True:
+          opt.heads.update({'hm': opt.num_classes*opt.region_num})
+          opt.heads.update({'voting_heads': {'hm'}})
+
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)
@@ -283,6 +379,19 @@ class opts(object):
       'ctdet': {'default_resolution': [512, 512], 'num_classes': 80,
                 'mean': [0.408, 0.447, 0.470], 'std': [0.289, 0.274, 0.278],
                 'dataset': 'coco'},
+      'ctseg': {'default_resolution': [512, 512], 'num_classes': 80,
+                'mean': [0.408, 0.447, 0.470], 'std': [0.289, 0.274, 0.278],
+                'dataset': 'coco_seg'},
+      'multi_pose': {
+            'default_resolution': [512, 512], 'num_classes': 1,
+            'mean': [0.408, 0.447, 0.470], 'std': [0.289, 0.274, 0.278],
+            'dataset': 'coco_hp', 'num_joints': 17,
+            'flip_idx': [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10],
+                         [11, 12], [13, 14], [15, 16]]},
+
+      'ddd': {'default_resolution': [384, 1280], 'num_classes': 3,
+                'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225],
+                'dataset': 'kitti'},
     }
     class Struct:
       def __init__(self, entries):

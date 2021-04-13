@@ -10,11 +10,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
+import re
 import torch
 import torch.nn as nn
-from src.lib.utils.image import calculate_logmap
-import torch.nn.functional as F
+from src.lib.models.networks.hough_module import Hough
 
 class convolution(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_bn=True):
@@ -177,7 +176,7 @@ class kp_module(nn.Module):
 
 class exkp(nn.Module):
     def __init__(
-        self, region_num, vote_field_size, n, nstack, dims, modules, heads, pre=None, cnv_dim=256,
+        self, region_num, vote_field_size, model_v1, n, nstack, dims, modules, heads, pre=None, cnv_dim=256,
         make_tl_layer=None, make_br_layer=None,
         make_cnv_layer=make_cnv_layer, make_heat_layer=make_kp_layer,
         make_tag_layer=make_kp_layer, make_regr_layer=make_kp_layer,
@@ -194,7 +193,6 @@ class exkp(nn.Module):
         self.region_num = region_num
         self.vote_field_size = vote_field_size
         self.deconv_filter_padding = int(self.vote_field_size / 2)
-        self.num_classes = int(heads['hm'] / region_num)
 
         curr_dim = dims[0]
 
@@ -236,6 +234,9 @@ class exkp(nn.Module):
             ) for _ in range(nstack - 1)
         ])
 
+        self.voting_heads = list(heads['voting_heads'])
+        del heads['voting_heads']
+        voting = False
         ## keypoint heatmaps
         for head in heads.keys():
             if 'hm' in head:
@@ -245,8 +246,23 @@ class exkp(nn.Module):
                 ])
                 self.__setattr__(head, module)
                 for heat in self.__getattr__(head):
-                    heat[-1].bias.data.fill_(0)
-                    heat[-1].weight.data.fill_(0)
+                    heat[-1].bias.data.fill_(-2.19)
+
+                for voting_head in self.voting_heads:
+                    if re.fullmatch(head, voting_head):
+                        voting = True
+                if voting:
+                    for heat in self.__getattr__(head):
+                        heat[-1].bias.data.fill_(0)
+                        heat[-1].weight.data.fill_(0)
+                    out_classes = int(heads[head] / self.region_num)
+                    hough_voting = Hough(region_num=self.region_num,
+                                         vote_field_size=self.vote_field_size,
+                                         num_classes=out_classes,
+                                         model_v1=model_v1)
+                    self.__setattr__('voting_' + head, hough_voting)
+                    voting = False
+
             else:
                 module = nn.ModuleList([
                     make_regr_layer(
@@ -254,42 +270,7 @@ class exkp(nn.Module):
                 ])
                 self.__setattr__(head, module)
 
-        self.deconv_filters = self._prepare_deconv_filters()
-
         self.relu = nn.ReLU(inplace=True) # deconv
-
-
-    def _prepare_deconv_filters(self):
-        vote_center = torch.tensor([64, 64]).cuda()
-        logmap = calculate_logmap((128, 128), vote_center)
-        logmap_onehot = torch.nn.functional.one_hot(logmap.long(), num_classes=int(logmap.max()+1)).float()
-        logmap_onehot = logmap_onehot[:, :, :self.region_num]
-        weights = logmap_onehot / \
-                        torch.clamp(torch.sum(torch.sum(logmap_onehot, dim=0), dim=0).float(), min=1.0)
-
-        start = 63 - int(self.vote_field_size/2) + 1
-        stop  = 63 + int(self.vote_field_size/2) + 2
-
-        deconv_filters = weights[start:stop, start:stop,:].permute(2,0,1).view(self.region_num, 1,
-                                                                     self.vote_field_size, self.vote_field_size)
-
-        W = nn.Parameter(deconv_filters)
-        W.requires_grad = False
-
-        layers = []
-        deconv_kernel = nn.ConvTranspose2d(
-            in_channels=self.region_num,
-            out_channels=1,
-            kernel_size=self.vote_field_size,
-            padding=self.deconv_filter_padding,
-            bias=False)
-
-        with torch.no_grad():
-            deconv_kernel.weight = W
-
-        layers.append(deconv_kernel)
-
-        return nn.Sequential(*layers)
 
     def forward(self, image):
         # print('image shape', image.shape)
@@ -305,15 +286,9 @@ class exkp(nn.Module):
             for head in self.heads:
                 layer = self.__getattr__(head)[ind]
 
-                if head == 'hm':
-                    voting_map = layer(cnv)
-                    batch_size, channels, width, height = voting_map.shape
-                    voting_map = voting_map.view(batch_size, self.region_num, self.num_classes, width, height)
-                    heatmap = torch.zeros((batch_size, self.num_classes, width, height), dtype=torch.float).cuda()
-                    for i in range(self.num_classes):
-                        heatmap[:, i, :, :] = self.deconv_filters(voting_map[:, :, i, :, :]).squeeze(dim=1)
-                    out[head] = heatmap
-
+                if head in self.voting_heads:
+                    voting_map_hm = layer(cnv)
+                    out[head] = self.__getattr__('voting_' + head)(voting_map_hm)
                 else:
                     y = layer(cnv)
                     out[head] = y
@@ -332,13 +307,13 @@ def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
     return nn.Sequential(*layers)
 
 class HourglassNet(exkp):
-    def __init__(self, heads, region_num, vote_field_size, num_stacks=2):
+    def __init__(self, heads, region_num, vote_field_size, model_v1, num_stacks=2):
         n       = 5
         dims    = [256, 256, 384, 384, 384, 512]
         modules = [2, 2, 2, 2, 2, 4]
 
         super(HourglassNet, self).__init__(
-            region_num, vote_field_size, n, num_stacks, dims, modules, heads,
+            region_num, vote_field_size, model_v1, n, num_stacks, dims, modules, heads,
             make_tl_layer=None,
             make_br_layer=None,
             make_pool_layer=make_pool_layer,
@@ -346,7 +321,6 @@ class HourglassNet(exkp):
             kp_layer=residual, cnv_dim=256
         )
 
-def get_houghnet_large_hourglass_net(num_layers, heads, head_conv, region_num, vote_field_size):
-  model = HourglassNet(heads, region_num, vote_field_size, 2)
+def get_houghnet_large_hourglass_net(num_layers, heads, head_conv, region_num, vote_field_size, model_v1):
+  model = HourglassNet(heads, region_num, vote_field_size, model_v1, 2)
   return model
-
