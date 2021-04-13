@@ -69,9 +69,9 @@ A step-by-step animation of the voting process is provided [here](https://docs.g
 
 | Model                    |   AP / AP50        |   Box AP / AP50    |
 |--------------------------|--------------------|--------------------|
-|[multi\_pose\_hm\_coco\_dla34\_1x\_light](../experiments/multi_pose_coco_dla34_1x.sh) | 56.9 / 81.6  | 50.1 / 71.4 |
-|[multi\_pose\_hp\_coco\_dla34\_1x\_light](../experiments/multi_pose_coco_dla34_1x.sh) | 56.8 / 81.5  | 50.2 / 70.9 |
-|[multi\_pose\_hm\_hp\_coco\_dla34\_1x\_light](../experiments/multi_pose_coco_dla34_1x.sh) | 56.9 / 81.6  | 50.4 / 71.7 |
+| Voting for Person Class. | 56.9 / 81.6  | 50.1 / 71.4 |
+| Voting for Keypoint Est. | 56.8 / 81.5  | 50.2 / 70.9 |
+| Voting for Both | 56.9 / 81.6  | 50.4 / 71.7 |
 
 
 All models could be found in [Model zoo](readme/MODEL_ZOO.md).
