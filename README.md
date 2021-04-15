@@ -6,7 +6,7 @@ Official PyTroch implementation of HoughNet.
 > Nermin Samet, Samet Hicsonmez, [Emre Akbas](http://user.ceng.metu.edu.tr/~emre/),        
 > *ECCV 2020. ([arXiv pre-print](https://arxiv.org/abs/2007.02355))*    
 
-Extended HoughNet with new tasks
+Extended HoughNet with new tasks.
 
 > [**HoughNet: Integrating near and long-range evidence for visual detection**](https://arxiv.org/abs/2104.06773),            
 > [Nermin Samet](https://nerminsamet.github.io/), [Samet Hicsonmez](https://giddyyupp.github.io/), [Emre Akbas](http://user.ceng.metu.edu.tr/~emre/),        
@@ -15,12 +15,14 @@ Extended HoughNet with new tasks
 
 ## Updates
 
-- (April, 2021) We extended the voting idea to the temporal domain by developing a new video object detection method. Repo for the video object detection is coming soon.
-- (April, 2021) We extended HoughNet with other visual detection tasks:
-instance segmentation, keypoint detection and 3D object detection.
-- (April, 2021)  We improved the source code of HoughNet by increasing its modularity and
-train speed. 
-- More details can be found in [arXiv pre-print](https://arxiv.org/abs/2104.06773).
+(April, 2021) We extended HoughNet with other visual detection tasks: video object detection, instance segmentation, keypoint detection and 3D object detection.
+
+- Extended the voting idea to the temporal domain by developing a new video object detection method. Repo for the video object detection is coming soon.
+- Inspired from [BlendMask](https://arxiv.org/abs/2001.00309), we extended HoughNet for instance segmentation. More details regarding training and network architecture is in the [paper](https://arxiv.org/abs/2104.06773) and [supplementary material](https://drive.google.com/file/d/1qDC-jj3xW7WNB2xyo7mpKqfaPr_s_fki/view?usp=sharing). 
+- We showed the effectivenes of HoughNet for keypoint detection and 3D object detection.
+- We improved the source code of HoughNet by increasing its modularity and train speed. 
+
+More details can be found in [arXiv pre-print](https://arxiv.org/abs/2104.06773).
 
 
 ## Summary
@@ -52,7 +54,7 @@ learning model for generic object detection.
   the same model trained on `train2017`. For experiments,
   object instance statistics and download please refer to [COCO minitrain](https://github.com/giddyyupp/coco-minitrain)
 
-A step-by-step animation of the voting process is provided [here](https://docs.google.com/presentation/d/1TI9gL3RC7URcNI7C72xxBiozbd2aNnYGTPAzU-BNbbo/edit?usp=sharing).
+A step-by-step animation of the voting process is provided [here](https://drive.google.com/file/d/1qDC-jj3xW7WNB2xyo7mpKqfaPr_s_fki/view?usp=sharing).
 
 ## Object Detection Results on COCO val2017
 
