@@ -18,7 +18,7 @@ Extended HoughNet with new tasks.
 (April, 2021) We extended HoughNet with other visual detection tasks: video object detection, instance segmentation, keypoint detection and 3D object detection.
 
 - Extended the voting idea to the temporal domain by developing a new video object detection method. Repo for the video object detection is coming soon.
-- Inspired from [BlendMask](https://arxiv.org/abs/2001.00309), we extended HoughNet for instance segmentation. More details regarding training and network architecture is in the [paper](https://arxiv.org/abs/2104.06773) and [supplementary material](https://drive.google.com/file/d/1qDC-jj3xW7WNB2xyo7mpKqfaPr_s_fki/view?usp=sharing). 
+- Inspired from [BlendMask](https://arxiv.org/abs/2001.00309), we extended HoughNet for instance segmentation. More details regarding training and network architecture are in the [paper](https://arxiv.org/abs/2104.06773) and [supplementary material](https://drive.google.com/file/d/1qDC-jj3xW7WNB2xyo7mpKqfaPr_s_fki/view?usp=sharing). 
 - We showed the effectivenes of HoughNet for keypoint detection and 3D object detection.
 - We improved the source code of HoughNet by increasing its modularity and train speed. 
 
