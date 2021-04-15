@@ -4,15 +4,23 @@ Official PyTroch implementation of HoughNet.
 
 > [**HoughNet: Integrating near and long-range evidence for bottom-up object detection**](https://arxiv.org/abs/2007.02355),            
 > Nermin Samet, Samet Hicsonmez, [Emre Akbas](http://user.ceng.metu.edu.tr/~emre/),        
-> *ECCV 2020. ([arXiv pre-print](https://arxiv.org/abs/2007.02355))*         
+> *ECCV 2020. ([arXiv pre-print](https://arxiv.org/abs/2007.02355))*    
+
+Extended HoughNet with new tasks
+
+> [**HoughNet: Integrating near and long-range evidence for visual detection**](https://arxiv.org/abs/2104.06773),            
+> [Nermin Samet](https://nerminsamet.github.io/), [Samet Hicsonmez](https://giddyyupp.github.io/), [Emre Akbas](http://user.ceng.metu.edu.tr/~emre/),        
+> *Under review at TPAMI. ([arXiv pre-print](https://arxiv.org/abs/2104.06773))*          
+     
 
 ## Updates
 
-- (April, 2021) We extended the voting idea to the temporal domain by developing a new video object detection method.
+- (April, 2021) We extended the voting idea to the temporal domain by developing a new video object detection method. Repo for the video object detection is coming soon.
 - (April, 2021) We extended HoughNet with other visual detection tasks:
 instance segmentation, keypoint detection and 3D object detection.
 - (April, 2021)  We improved the source code of HoughNet by increasing its modularity and
 train speed. 
+- More details can be found in [arXiv pre-print](https://arxiv.org/abs/2104.06773).
 
 
 ## Summary
@@ -99,6 +107,9 @@ If you find HoughNet useful for your research, please cite our paper as follows.
 > N. Samet, S. Hicsonmez, E. Akbas, "HoughNet: Integrating near and long-range evidence for bottom-up object detection",
 > In European Conference on Computer Vision (ECCV), 2020.
 
+> N. Samet, S. Hicsonmez, E. Akbas, "HoughNet: Integrating near and long-range evidence for visual detection",
+> arXiv, 2021.
+
 BibTeX entry:
 ```
 @inproceedings{HoughNet,
@@ -106,5 +117,12 @@ BibTeX entry:
   title = {HoughNet: Integrating near and long-range evidence for bottom-up object detection},
   booktitle = {European Conference on Computer Vision (ECCV)},
   year = {2020},
+}
+```
+```
+@misc{HoughNet2021,
+      title={HoughNet: Integrating near and long-range evidence for visual detection}, 
+      author={Nermin Samet and Samet Hicsonmez and Emre Akbas},
+      year={2021}, 
 }
 ```
