@@ -1,6 +1,6 @@
 # HoughNet: Integrating near and long-range evidence for bottom-up object detection
 
-Official PyTroch implementation of HoughNet.
+Official PyTorch implementation of HoughNet.
 
 > [**HoughNet: Integrating near and long-range evidence for bottom-up object detection**](https://arxiv.org/abs/2007.02355),            
 > Nermin Samet, Samet Hicsonmez, [Emre Akbas](http://user.ceng.metu.edu.tr/~emre/),        
