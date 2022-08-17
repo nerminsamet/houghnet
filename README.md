@@ -10,12 +10,14 @@ Extended HoughNet with new tasks.
 
 > [**HoughNet: Integrating near and long-range evidence for visual detection**](https://arxiv.org/abs/2104.06773),            
 > [Nermin Samet](https://nerminsamet.github.io/), [Samet Hicsonmez](https://giddyyupp.github.io/), [Emre Akbas](http://user.ceng.metu.edu.tr/~emre/),        
-> *Under review at TPAMI. ([arXiv pre-print](https://arxiv.org/abs/2104.06773))*          
+> *TPAMI 2022. ([arXiv pre-print](https://arxiv.org/abs/2104.06773))*          
      
 
 ## Updates
 
-(April, 2021) We extended HoughNet with other visual detection tasks: video object detection, instance segmentation, keypoint detection and 3D object detection.
+(August, 2022) Our extended paper is accepted to IEEE Transaction on Pattern Analysis and Machine Intelligence (TPAMI). 
+
+(April, 2021) We extended HoughNet with other visual detection tasks: video object detection, instance segmentation, keypoint detection and 3D object detection. 
 
 - Extended the voting idea to the temporal domain by developing a new video object detection method. **Code is avaliable at [HoughNet-VID](https://github.com/nerminsamet/houghnet-vid) repo.**
 - Inspired from [BlendMask](https://arxiv.org/abs/2001.00309), we extended HoughNet for instance segmentation. More details regarding training and network architecture are in the [paper](https://arxiv.org/abs/2104.06773) and [supplementary material](https://drive.google.com/file/d/1qDC-jj3xW7WNB2xyo7mpKqfaPr_s_fki/view?usp=sharing). 
